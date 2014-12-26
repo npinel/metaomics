@@ -1,0 +1,93 @@
+#!/bin/bash
+##########################################################################################
+# Author(s):                                                                             #
+#    1. Author name (email for contact)                                                  #
+# Affiliation(s):                                                                        #
+#    1. Instute that should be credited                                                  #
+# Project(s):                                                                            #
+#    Time-resolved multi-omic analysis of lipid-accumulating communities                 #
+# Date: 30 October 2013                                                                  # 
+# Script: <script name>.sh                                                               #
+# Purpose:                                                                               #
+##########################################################################################
+
+# define message colors
+# usage:
+# echo -e "${bldred}<stylized text here>${txtrst}<non-stylized text here>"
+bldblk='\e[1;30m' # bold black
+bldred='\e[1;31m' # bold red
+bldgrn='\e[1;32m' # bold green
+bldblu='\e[1;34m' # bold blue
+txtbld='\e[1m'    # bold, default color
+txtrst='\e[0m'    # reset text style
+
+## use the following pragma for program messages
+## ${bldblk}[`date +%H:%M:%S` ${bldgrn}START${bldblk}] ${txtrst}
+## ${bldblk}[`date +%H:%M:%S`   ${bldgrn}END${bldblk}] ${txtrst}
+## ${bldblk}[`date +%H:%M:%S`  ${bldblu}PROG${bldblk}] ${txtrst}
+## ${bldblk}[`date +%H:%M:%S` ${bldred}ERROR${bldblk}] ${txtrst}
+
+usage(){
+    cat << EOF
+
+Usage: $0 options
+
+OPTIONS:
+  -f  file with tab-separated sample list (ID\tYYYY-MM-DD; required)
+  -d  data type (MG = metagenomics; MT = metatranscriptomics)
+  -t  testing flag; prints out the commands that would have been executed  -h  display this message
+  -h  display this message
+
+EOF
+    exit 1
+}
+
+####################
+# define variables #
+####################
+FILE=
+DATA_TYPE=MG
+TESTING=0
+while getopts "f:d:o:ht" OPTION
+do
+    case $OPTION in
+	h) usage ;;
+	f) FILE=$OPTARG ;;
+	d) DATA_TYPE=$OPTARG ;;
+	t) TESTING=1 ;;
+	?) usage ;;
+    esac
+done
+
+######################
+# load ESB shortcuts #
+######################
+source /mnt/nfs/projects/ecosystem_biology/esb.shortcuts
+export PATH=$PATH:$TOOLS
+
+#################################################
+# identify input type and populate sample array #
+#################################################
+declare -a SAMPLES=()
+if [ -f $FILE ]
+then
+    while read -r line; do
+	[[ "$line" =~ ^#.*$ ]] && continue
+	set -- $line
+	declare -a fields=($*)
+	SAMPLES=("${SAMPLES[@]}" ${fields[0]})
+    done < $FILE
+else
+    SAMPLES=("${SAMPLES[@]}" $FILE)
+fi
+
+####################
+# execute the task #
+####################
+for S in "${SAMPLES[@]}"
+do
+    echo -e "${bldblk}[`date +%H:%M:%S` ${bldgrn}START${bldblk}] ${txtrst}Starting to run <insert task name here> on ${bldblk}$S${txtrst}."
+    echo -e "${bldblk}[`date +%H:%M:%S`   ${bldgrn}END${bldblk}] ${txtrst}Finished processing ${bldblk}$S${txtrst}."
+done
+
+exit 0
